@@ -135,6 +135,21 @@ function el(tag, props, ...kids) {
   kids.flat().forEach(k => k != null && e.append(k));
   return e;
 }
+/* ===== CONFIGURAÇÃO DO SERVIDOR (Supabase) =====
+   Preencha as duas linhas abaixo para guardar os cartões em servidor (link curto no QR).
+   Deixe vazio para usar o modo sem servidor (dados dentro do link). */
+const SUPABASE_URL = "";   // ex.: https://abcdefgh.supabase.co
+const SUPABASE_KEY = "";   // chave pública "anon" / "publishable" do projeto
+const NUVEM = /^https:\/\//.test(SUPABASE_URL) && SUPABASE_KEY.length > 20;
+async function rpc(fn, args) {
+  const r = await fetch(SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/rpc/" + fn, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
+    body: JSON.stringify(args)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
 const lines = (t) => t.split("\n").map(s => s.trim()).filter(Boolean);
 
 /* ---------- codificação dos dados no link (sem servidor) ---------- */
@@ -206,13 +221,13 @@ function campo(id, rotulo, el_) { el_.id = id; return el("div", {}, el("label", 
 
 const ESTA_LOCAL = location.protocol === "file:" || ["localhost", "127.0.0.1", ""].includes(location.hostname);
 
-function renderForm() {
+function renderForm(edit) {
   const app = $("#app");
   app.replaceChildren();
   const sangue = el("select", {}, ["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(v => el("option", { value: v, textContent: v || "Não sei / não informar" })));
   const meds = el("div", { id: "meds" }), conts = el("div", { id: "conts" });
 
-  const form = el("form", { id: "form", onsubmit: (e) => { e.preventDefault(); gerar(); } },
+  const form = el("form", { id: "form", onsubmit: (e) => { e.preventDefault(); gerar(edit); } },
     el("fieldset", {}, el("legend", { textContent: "Quem é" }),
       campo("f-n", "Nome completo", el("input", { required: true })),
       campo("f-nasc", "Data de nascimento (mostra só a idade)", el("input", { type: "date" })),
@@ -230,19 +245,31 @@ function renderForm() {
       el("p", { className: "privacy", textContent: "Você abriu o arquivo direto do computador. O QR code precisa apontar para o endereço onde o site fica no ar (por exemplo, o do GitHub Pages). Preencha abaixo." }),
       campo("f-base", "Endereço do site publicado", el("input", { type: "url", placeholder: "https://seuusuario.github.io/cartao-emergencia/" }))) : null,
     el("label", { className: "chk" }, el("input", { type: "checkbox", id: "f-verso", checked: true }), "Incluir verso do cartão (contatos, alergias e condições escritos no papel)"),
+    NUVEM && !edit ? el("label", { className: "chk" }, el("input", { type: "checkbox", id: "f-ok" }), "Autorizo guardar estes dados, inclusive de saúde, em servidor para o QR code funcionar. Posso apagar quando quiser.") : null,
     el("div", { className: "actions" },
-      el("button", { type: "submit", className: "btn main", textContent: "Gerar cartão e QR code" }),
-      el("button", { type: "button", className: "btn", textContent: "Preencher com exemplo", onclick: () => preencher(EXEMPLO) })),
+      el("button", { type: "submit", className: "btn main", textContent: edit ? "Salvar alterações" : "Gerar cartão e QR code" }),
+      edit ? el("button", { type: "button", className: "btn", textContent: "Apagar cartão", onclick: () => apagar(edit) }) : null,
+      edit ? null : el("button", { type: "button", className: "btn", textContent: "Preencher com exemplo", onclick: () => preencher(EXEMPLO) })),
     el("div", { id: "result", hidden: true })
   );
 
   app.append(
     el("h1", { textContent: "Gerador de cartão de emergência" }),
+    el("p", { className: "privacy", textContent: "Site de demonstração (projeto de portfólio). Use dados fictícios para testar e não dependa só deste cartão como identificação médica." }),
     el("p", { className: "lead", textContent: "Preencha, gere o QR code e cole no verso do celular, na carteira ou no chaveiro. Em uma emergência, quem escanear vê suas informações e liga para sua família com um toque." }),
-    el("p", { className: "privacy", textContent: "Privacidade: nada é enviado para servidor nem guardado em banco de dados. Os dados ficam dentro do próprio link e do QR code. Quem tiver o link ou o QR vê as informações, então coloque só o essencial (sem CPF e sem endereço)." }),
+    el("p", { className: "privacy", textContent: NUVEM ? "Privacidade: seus dados ficam guardados em um servidor e o QR code leva a um link curto. Quem tiver o link ou o QR vê as informações, então coloque só o essencial (sem CPF e sem endereço). Você pode editar ou apagar o cartão quando quiser, com o link de edição." : "Privacidade: nada é enviado para servidor nem guardado em banco de dados. Os dados ficam dentro do próprio link e do QR code. Quem tiver o link ou o QR vê as informações, então coloque só o essencial (sem CPF e sem endereço)." }),
     form
   );
-  conts.append(linhaCont()); meds.append(linhaMed());
+  if (edit) preencher(edit.dados); else { conts.append(linhaCont()); meds.append(linhaMed()); }
+}
+
+async function apagar(edit) {
+  if (!confirm("Apagar este cartão definitivamente? O QR code deixará de funcionar.")) return;
+  try {
+    await rpc("apagar_cartao", { p_id: edit.id, p_token: edit.token });
+    $("#app").replaceChildren(el("h1", { textContent: "Cartão apagado" }), el("p", { textContent: "Seus dados foram removidos do servidor." }),
+      el("a", { className: "btn", href: location.href.split("#")[0].split("?")[0], textContent: "Criar um novo cartão" }));
+  } catch { alert("Não foi possível apagar agora. Tente de novo."); }
 }
 
 function preencher(d) {
@@ -276,11 +303,11 @@ function ico(nome, cls) {
   return sp;
 }
 
-async function gerar() {
+async function gerar(edit) {
   const dados = coletar();
   const out = $("#result");
   out.hidden = false;
-  let base = location.href.split("#")[0];
+  let base = location.href.split("#")[0].split("?")[0];
   const campoBase = $("#f-base");
   if (campoBase) {
     const b = campoBase.value.trim();
@@ -288,10 +315,31 @@ async function gerar() {
       out.replaceChildren(el("p", { className: "warn", textContent: "Preencha o endereço do site publicado (começando com https://) para o QR code abrir o cartão em qualquer celular." }));
       return;
     }
-    base = b.split("#")[0];
+    base = b.split("#")[0].split("?")[0];
   }
-  const code = await encode(dados);
-  const link = base + "#c=" + code;
+  let link, linkEdicao = null;
+  if (NUVEM) {
+    if (!edit && !$("#f-ok").checked) {
+      out.replaceChildren(el("p", { className: "warn", textContent: "Marque a autorização para guardar os dados em servidor." }));
+      return;
+    }
+    try {
+      if (edit) {
+        if (!(await rpc("atualizar_cartao", { p_id: edit.id, p_token: edit.token, p_dados: dados }))) throw new Error("token");
+        link = base + "?c=" + edit.id;
+        linkEdicao = base + "?edit=" + edit.id + "#k=" + edit.token;
+      } else {
+        const r = await rpc("criar_cartao", { p_dados: dados });
+        link = base + "?c=" + r.id;
+        linkEdicao = base + "?edit=" + r.id + "#k=" + r.token;
+      }
+    } catch (e) {
+      out.replaceChildren(el("p", { className: "warn", textContent: "Não consegui salvar o cartão agora. Confira a conexão e tente de novo." }));
+      return;
+    }
+  } else {
+    link = base + "#c=" + (await encode(dados));
+  }
   out.replaceChildren(el("h2", { textContent: "Seu cartão está pronto" }));
 
   const qr = el("div", { className: "qrbox" });
@@ -360,6 +408,12 @@ async function gerar() {
       try { await navigator.clipboard.writeText(link); e.target.textContent = "Copiado!"; } catch { campoLink.select(); }
     } }))
   );
+  if (linkEdicao) {
+    out.append(
+      el("p", { className: "scan" }, el("strong", { textContent: "Guarde o link de edição: " }),
+        "é o único jeito de alterar ou apagar este cartão depois. Não compartilhe e não perca."),
+      el("input", { readOnly: true, value: linkEdicao, "aria-label": "Link de edição", onfocus: (e) => e.target.select() }));
+  }
   cartao.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
@@ -405,10 +459,27 @@ function renderCartao(p) {
 
 /* ---------- início ---------- */
 async function iniciar() {
+  const q = new URLSearchParams(location.search);
   const m = location.hash.match(/^#c=(.+)$/);
-  if (!m) return renderForm();
-  try { renderCartao(await decode(m[1])); }
-  catch { $("#app").replaceChildren(el("h1", { textContent: "Cartão inválido" }), el("p", { textContent: "O link parece estar incompleto." }), el("a", { className: "btn", href: location.href.split("#")[0], textContent: "Criar um cartão" })); }
+  const k = (location.hash.match(/^#k=(.+)$/) || [])[1];
+  try {
+    if (NUVEM && q.get("c")) {
+      const d = await rpc("obter_cartao", { p_id: q.get("c") });
+      if (!d) throw new Error("nao encontrado");
+      return renderCartao(d);
+    }
+    if (NUVEM && q.get("edit")) {
+      const d = await rpc("obter_cartao", { p_id: q.get("edit") });
+      if (!d || !k) throw new Error("edicao");
+      return renderForm({ id: q.get("edit"), token: k, dados: d });
+    }
+    if (m) return renderCartao(await decode(m[1]));
+    return renderForm();
+  } catch {
+    $("#app").replaceChildren(el("h1", { textContent: "Cartão não encontrado" }),
+      el("p", { textContent: "O link pode estar incompleto ou o cartão foi apagado." }),
+      el("a", { className: "btn", href: location.href.split("#")[0].split("?")[0], textContent: "Criar um cartão" }));
+  }
 }
 window.addEventListener("hashchange", iniciar);
 iniciar();

@@ -74,3 +74,18 @@ O QR code aponta para o endereço onde o site está hospedado. Se a página for 
 2. Em **Settings → Pages**, em *Build and deployment*, escolha **Deploy from a branch**, branch `main` e pasta `/ (root)`, e salve.
 3. Após cerca de 1 minuto, o site fica em `https://SEU-USUARIO.github.io/cartao-emergencia/`.
 4. Abra esse endereço, preencha o formulário (ou use "Preencher com exemplo"), gere o cartão e escaneie o QR com outro celular.
+
+## Evolução opcional: modo com servidor (link curto por pessoa)
+
+A demonstração publicada funciona **sem servidor**. Isto abaixo é uma evolução possível, não necessária para usar o projeto.
+
+Por padrão o projeto funciona **sem servidor**: os dados ficam dentro do link. Para que cada pessoa tenha um **link curto próprio** (e um QR code bem mais simples), os cartões podem ser guardados em um banco gratuito no [Supabase](https://supabase.com):
+
+1. Crie um projeto no Supabase.
+2. Em **SQL Editor**, cole o conteúdo de `supabase.sql` e clique em **Run**.
+3. Em **Project Settings → API**, copie a **Project URL** e a chave pública (**anon** ou **publishable**). Nunca use a `service_role`.
+4. No `index.html`, preencha `SUPABASE_URL` e `SUPABASE_KEY` e publique de novo.
+
+Como funciona: a tabela é fechada (ninguém lista nem lê direto). O site só consegue buscar um cartão pelo código aleatório dele, e alterar ou apagar exige um **código secreto de edição**, guardado apenas como hash. Quem cria o cartão recebe um **link de edição** para atualizar ou apagar os dados quando quiser.
+
+**Atenção (LGPD):** dados de saúde são dados pessoais sensíveis. Ao guardar informações de outras pessoas, avise claramente o uso, peça autorização (o formulário já tem uma caixa de consentimento) e permita apagar. Em um projeto de portfólio, deixe claro que é uma demonstração.

@@ -2,94 +2,72 @@
 
 ### 🔗 [Acesse a demonstração ao vivo](https://jailtonssantos.github.io/cartao-emergencia/)
 
-Abra o link, clique em **Preencher com exemplo**, gere o cartão e escaneie o QR code com a câmera do celular. Use só dados fictícios.
+Abra o link, clique em **Preencher com exemplo**, gere o cartão e escaneie o QR code com a câmera do celular. **Use só dados fictícios.**
 
-Uma página web que gera um **cartão de emergência digital**: a pessoa preenche seus dados de saúde e contatos, recebe um **QR code** e, em uma emergência, quem escanear vê tudo no celular e liga para a família (ou chama o SAMU) com um toque.
+## Sobre o projeto
 
-> Nasceu de uma necessidade real: a ideia de ter um cartão de emergência para uma pessoa transplantada, com remédios, horários e contatos acessíveis em segundos, mesmo sem aplicativo instalado.
+Uma página web que gera um **cartão de emergência digital**: a pessoa preenche seus dados de saúde e contatos, recebe um **QR code** e um cartão pronto para imprimir. Em uma emergência, quem escanear o QR vê as informações no celular, sem instalar aplicativo, e liga para a família ou para o SAMU com um toque.
 
-## O que ele faz
+> Nasceu da ideia de ter informações de emergência (remédios, alergias, contatos) acessíveis em segundos, para quem precisa delas em um momento crítico.
 
-- Formulário simples: nome, idade, tipo sanguíneo, destaque principal, alergias, condições, remédios e contatos.
-- Gera um **cartão físico pronto para imprimir** (tamanho de cartão de crédito, 85,6 × 54 mm) com **frente** (QR code, nome, idade, tipo sanguíneo e destaque) e **verso opcional** (contatos, alergias e condições), com botão de impressão e opção de salvar em PDF.
-- **Visual de cartão médico**: frente com painel lateral e estrela da vida, QR code, nome, idade e tipo sanguíneo em destaque; verso com contatos, alergias, condições e SAMU. Três cores à escolha (vermelho, azul e verde).
-- Depois de gerar, orienta a **escanear o QR** para conferir como as informações aparecem no site.
-- Também permite baixar o QR code em PNG.
-- Cartão pensado para emergência: botão grande do **SAMU (192)**, botões de **ligar** e **WhatsApp** para cada contato, leitura rápida em tela pequena.
-- Modo escuro automático e fonte de alta legibilidade (Atkinson Hyperlegible).
-- Botão "Preencher com exemplo" com dados fictícios.
+## Funcionalidades
 
-## Privacidade por design
-
-**Não existe servidor nem banco de dados.** Todos os dados são comprimidos e codificados dentro do próprio link (na parte depois do `#`), que nunca é enviada ao servidor de hospedagem. O QR code é esse mesmo link.
-
-Isso significa que:
-
-- ninguém guarda informações de saúde de ninguém;
-- quem tiver o link ou o QR vê os dados, então **coloque só o essencial** (sem CPF, endereço ou documentos);
-- para alterar algo, gere um novo cartão e troque o QR.
+- **Formulário simples:** nome, nascimento (mostra só a idade), tipo sanguíneo, destaque principal, alergias, condições, remédios e contatos.
+- **Cartão para imprimir** (cerca de 95 × 45 mm), com **frente** (QR code, nome, idade, tipo sanguíneo e destaque) e **verso opcional** (contatos, alergias, condições e SAMU). Botão de impressão e opção de salvar em PDF.
+- **Três cores** à escolha (vermelho, azul e verde).
+- **QR code grande** para testar na tela e download do QR em PNG, com margem para leitura.
+- **Cartão aberto pelo QR** pensado para emergência: botão grande do **SAMU (192)**, botões de **ligar** e **WhatsApp** para cada contato, leitura rápida em tela pequena, modo escuro automático e fonte de alta legibilidade (Atkinson Hyperlegible).
+- Botão **"Preencher com exemplo"** com dados fictícios.
 
 ## Como funciona
 
 1. Os dados do formulário viram um objeto JSON.
 2. O JSON é comprimido (`CompressionStream`, deflate) e convertido para Base64 seguro para URL.
-3. O resultado vai no hash da URL: `https://seu-site/#c=...`.
-4. Ao abrir um link com `#c=`, a página decodifica o conteúdo e mostra o cartão; sem o hash, mostra o formulário.
-5. O QR code é gerado a partir do link com a biblioteca [qrcodejs](https://cdnjs.com/libraries/qrcodejs).
+3. O resultado vai no *hash* da URL: `https://seu-site/#c=...`.
+4. Ao abrir um link com `#c=`, a página decodifica o conteúdo e mostra o cartão. Sem o hash, mostra o formulário.
+5. O QR code é gerado a partir desse link com a biblioteca [qrcodejs](https://cdnjs.com/libraries/qrcodejs).
 
-Tudo em um único arquivo `index.html`, sem build e sem dependências além do QR code e da fonte.
+Tudo em **um único arquivo** `index.html`, sem build e sem backend.
 
-## Como usar e publicar
+## Privacidade por design
+
+**Não existe servidor nem banco de dados.** Os dados ficam dentro do próprio link (a parte depois do `#` não é enviada ao servidor de hospedagem), e o QR code é esse mesmo link. Isso significa que:
+
+- ninguém guarda informações de saúde de ninguém;
+- **quem tiver o link ou o QR vê os dados**, então coloque só o essencial (sem CPF, endereço ou documentos);
+- para alterar algo, gere um novo cartão e troque o QR.
+
+## Tecnologias
+
+HTML, CSS e JavaScript puros · [qrcodejs](https://cdnjs.com/libraries/qrcodejs) · fonte Atkinson Hyperlegible (Google Fonts) · hospedagem estática (GitHub Pages).
+
+## Como publicar
 
 Basta hospedar o `index.html` em qualquer hospedagem estática:
 
+- **GitHub Pages:** envie o arquivo para um repositório público e, em *Settings → Pages*, escolha **Deploy from a branch**, branch `main`, pasta `/ (root)`. O site fica em `https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/`.
 - **Netlify:** arraste a pasta em app.netlify.com/drop.
-- **GitHub Pages:** envie para um repositório e ative o Pages em *Settings → Pages*.
 
-Importante: o QR code aponta para o endereço onde o site está hospedado. **Defina o endereço final antes de imprimir** e não mude depois.
+O QR code aponta para o endereço onde o site está hospedado, então **defina o endereço final antes de imprimir** e não mude depois. Se a página for aberta direto do computador (`file:///...`), o formulário pede o endereço publicado para gerar um QR que funcione em outros celulares.
 
 ## Limitações
 
-- Quantidade de texto limitada pelo tamanho que cabe em um QR code (a página avisa quando passar do limite).
+- Como os dados vão dentro do QR, **quanto mais texto, mais denso fica o código**, e ele pode ser difícil de ler em tamanho pequeno. A página avisa e sugere reduzir o texto. Teste sempre o QR impresso antes de plastificar ou colar.
 - Quem tem o link vê os dados; não há senha nem controle de acesso.
-- Depende de `CompressionStream` para a compressão (navegadores atuais); sem ele, o link fica maior.
+- Depende de `CompressionStream` para comprimir (navegadores atuais); sem ele, o link fica maior.
 - O botão do WhatsApp aparece só para telefones brasileiros com DDD.
 
 ## Aviso
 
-Este projeto **não substitui atendimento médico** nem pulseiras/documentos médicos oficiais. As informações são de responsabilidade de quem preenche. Em emergência, ligue 192 (SAMU).
+Este projeto é uma **demonstração** e **não substitui atendimento médico**, pulseiras ou documentos médicos oficiais. As informações são de responsabilidade de quem preenche. Em emergência, ligue **192 (SAMU)**.
 
-## Ideias para evoluir
+## Próximos passos
 
-- Várias pessoas da família no mesmo cartão (abas).
+- Link curto por pessoa, guardando os cartões em um banco de dados (por exemplo, Supabase), o que deixaria o QR bem mais simples de ler e permitiria editar sem trocar o QR. Exigiria cuidado com a LGPD, já que são dados de saúde.
+- Várias pessoas da família no mesmo cartão.
 - Tabela de remédios por horário.
-- Versão em PDF para imprimir o cartão com o QR.
-- Opção de proteger com PIN os dados mais sensíveis.
+- Proteção com PIN para os dados mais sensíveis.
 
 ## Licença
 
 MIT.
-
-## Publicar no GitHub Pages (para o QR code funcionar)
-
-O QR code aponta para o endereço onde o site está hospedado. Se a página for aberta direto do computador (`file:///...`), o QR não serve para outras pessoas. Para testar de verdade:
-
-1. Crie um repositório público no GitHub (ex.: `cartao-emergencia`) e envie o `index.html` e o `README.md`.
-2. Em **Settings → Pages**, em *Build and deployment*, escolha **Deploy from a branch**, branch `main` e pasta `/ (root)`, e salve.
-3. Após cerca de 1 minuto, o site fica em `https://SEU-USUARIO.github.io/cartao-emergencia/`.
-4. Abra esse endereço, preencha o formulário (ou use "Preencher com exemplo"), gere o cartão e escaneie o QR com outro celular.
-
-## Evolução opcional: modo com servidor (link curto por pessoa)
-
-A demonstração publicada funciona **sem servidor**. Isto abaixo é uma evolução possível, não necessária para usar o projeto.
-
-Por padrão o projeto funciona **sem servidor**: os dados ficam dentro do link. Para que cada pessoa tenha um **link curto próprio** (e um QR code bem mais simples), os cartões podem ser guardados em um banco gratuito no [Supabase](https://supabase.com):
-
-1. Crie um projeto no Supabase.
-2. Em **SQL Editor**, cole o conteúdo de `supabase.sql` e clique em **Run**.
-3. Em **Project Settings → API**, copie a **Project URL** e a chave pública (**anon** ou **publishable**). Nunca use a `service_role`.
-4. No `index.html`, preencha `SUPABASE_URL` e `SUPABASE_KEY` e publique de novo.
-
-Como funciona: a tabela é fechada (ninguém lista nem lê direto). O site só consegue buscar um cartão pelo código aleatório dele, e alterar ou apagar exige um **código secreto de edição**, guardado apenas como hash. Quem cria o cartão recebe um **link de edição** para atualizar ou apagar os dados quando quiser.
-
-**Atenção (LGPD):** dados de saúde são dados pessoais sensíveis. Ao guardar informações de outras pessoas, avise claramente o uso, peça autorização (o formulário já tem uma caixa de consentimento) e permita apagar. Em um projeto de portfólio, deixe claro que é uma demonstração.

@@ -81,7 +81,7 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem}
 .lado-t{font-size:3.6cqw;line-height:1.08}
 .lado hr{border:0;border-top:.45cqw solid #fff;width:80%}
 .lado-s{font-size:2cqw;letter-spacing:.12em;line-height:1.3}
-.dir{flex:1;min-width:0;display:grid;grid-template-columns:31cqw 1fr;grid-template-rows:1fr auto;gap:1.6cqw 3.5cqw;padding:3cqw 3.5cqw 2cqw 3cqw}
+.dir{flex:1;min-width:0;display:grid;grid-template-columns:35cqw 1fr;grid-template-rows:1fr auto;gap:1.6cqw 3.5cqw;padding:3cqw 3.5cqw 2cqw 3cqw}
 .qrbox{align-self:center;background:#fff;line-height:0;border:.6cqw solid var(--ac);border-radius:3cqw;padding:1.1cqw}
 .qrbox img,.qrbox canvas{width:100%!important;height:auto!important}
 .cf-info{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:1.5cqw;min-width:0;text-align:right}
@@ -110,6 +110,8 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem}
 .l-txt strong{display:block;color:var(--ac);font-size:3.2cqw}
 .samu{margin-left:auto;background:var(--ac);color:#fff;font-weight:700;font-size:3.5cqw;border-radius:99px;padding:.7cqw 4cqw;white-space:nowrap}
 
+.qrgrande{display:inline-block;background:#fff;padding:12px;border-radius:12px;line-height:0;max-width:100%}
+.qrgrande img{display:block;width:min(320px,100%);height:auto}
 .temas{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0}
 .btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .chk{display:flex;gap:10px;align-items:center;margin-top:18px}
@@ -303,6 +305,17 @@ function ico(nome, cls) {
   return sp;
 }
 
+function pngComMargem(canvas) {
+  const m = Math.round(canvas.width * 0.07);
+  const c = document.createElement("canvas");
+  c.width = c.height = canvas.width + 2 * m;
+  const x = c.getContext("2d");
+  x.fillStyle = "#fff";
+  x.fillRect(0, 0, c.width, c.height);
+  x.drawImage(canvas, m, m);
+  return c.toDataURL("image/png");
+}
+
 async function gerar(edit) {
   const dados = coletar();
   const out = $("#result");
@@ -344,12 +357,14 @@ async function gerar(edit) {
 
   const qr = el("div", { className: "qrbox" });
   try {
-    new QRCode(qr, { text: link, width: 280, height: 280, correctLevel: QRCode.CorrectLevel.L });
+    new QRCode(qr, { text: link, width: 560, height: 560, correctLevel: QRCode.CorrectLevel.L });
   } catch (e) {
     out.append(el("p", { className: "warn", textContent: "Há informação demais para caber num QR code. Reduza observações, remédios ou condições e gere de novo." }));
     return;
   }
-  if (link.length > 1500) out.append(el("p", { className: "warn", textContent: "O QR ficou denso e pode ser difícil de ler. Imprima em tamanho maior ou reduza o texto." }));
+  if (link.length > 700) out.append(el("p", { className: "warn", textContent: "O QR ficou denso e pode ser difícil de ler. Para facilitar, reduza o texto (menos remédios, condições ou observações)." }));
+  const grande = el("div", { className: "qrgrande" });
+  new QRCode(grande, { text: link, width: 560, height: 560, correctLevel: QRCode.CorrectLevel.L });
 
   const frente = el("div", { className: "face frente" },
     el("div", { className: "lado" },
@@ -395,12 +410,13 @@ async function gerar(edit) {
     el("div", { className: "actions" },
       el("button", { type: "button", className: "btn main", textContent: "Imprimir cartão", onclick: () => window.print() }),
       el("button", { type: "button", className: "btn", textContent: "Baixar QR code", onclick: () => {
-        const c = qr.querySelector("canvas");
-        el("a", { href: c.toDataURL("image/png"), download: "qrcode-cartao-emergencia.png" }).click();
+        el("a", { href: pngComMargem(grande.querySelector("canvas")), download: "qrcode-cartao-emergencia.png" }).click();
       } })),
+    el("p", { className: "lead", textContent: "Para testar na tela, use este QR code maior (o do cartão é menor porque precisa caber nele):" }),
+    el("div", {}, grande),
     el("p", { className: "scan" },
       el("strong", { textContent: "Agora confira: " }),
-      "escaneie o QR code acima com a câmera de outro celular para ver suas informações no site, do jeito que quem te socorrer vai ver. Se estiver usando um só aparelho, toque em ",
+      "escaneie o QR code grande acima com a câmera de outro celular para ver suas informações no site, do jeito que quem te socorrer vai ver. Se estiver usando um só aparelho, toque em ",
       el("a", { href: link, target: "_blank", rel: "noopener", textContent: "abrir cartão" }), "."),
     el("p", { className: "lead", textContent: "Dica: na tela de impressão você também pode escolher “Salvar como PDF”. Teste o QR antes de plastificar ou colar." }),
     el("label", { textContent: "Link do cartão (guarde se quiser reenviar)" }), campoLink,

@@ -1,5 +1,9 @@
 # Gerador de Cartão de Emergência com QR Code
 
+### 🔗 [Acesse a demonstração ao vivo](https://jailtonssantos.github.io/cartao-emergencia/)
+
+Abra o link, clique em **Preencher com exemplo**, gere o cartão e escaneie o QR code com a câmera do celular. Use só dados fictícios.
+
 Uma página web que gera um **cartão de emergência digital**: a pessoa preenche seus dados de saúde e contatos, recebe um **QR code** e, em uma emergência, quem escanear vê tudo no celular e liga para a família (ou chama o SAMU) com um toque.
 
 > Nasceu de uma necessidade real: a ideia de ter um cartão de emergência para uma pessoa transplantada, com remédios, horários e contatos acessíveis em segundos, mesmo sem aplicativo instalado.
